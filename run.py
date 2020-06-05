@@ -8,7 +8,7 @@ def to_shp():
     """
     data_dir_input = ['']
     data_dir_output = ''
-    functions.gml_to_shp(data_dir_input, data_dir_output)
+    functions.extract_archive(data_dir_input, data_dir_output)
 
 
 def to_database():
@@ -29,3 +29,5 @@ def to_database():
 
     functions.write_to_database(merge, data_dir, database, schema_name, table_name, username, password, host, port, format)
 
+to_shp()
+#to_database()

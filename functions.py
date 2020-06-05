@@ -5,7 +5,53 @@ from sqlalchemy import create_engine
 from geopandas_postgis import PostGIS
 
 
-def gml_to_shp(input_list, data_dir_output):
+def _convert_file_format(input_dir, output_dir, file, output_format):
+    """
+    Convert the file format
+    """
+    file_name = file.split('.')[:-1][0]
+
+    # read in data file    
+    gdf = gpd.read_file('%s' % (os.path.join(input_dir, file)))
+
+    # write file in new format
+    drivers = {'shp':'', 'geopackage':'GPKG', 'gpkg':'GPKG', 'geojson':'GeoJSON'}
+
+    # set the driver to use if required
+    if output_format not in drivers.keys():
+        driver_type = output_format
+    else:
+        driver_type = drivers[output_format]
+
+    if output_format == 'shp':
+        gdf.to_file('%s.%s' % (os.path.join(output_dir, file_name), output_format))
+    else:
+        gdf.to_file('%s.%s' % (os.path.join(output_dir, file_name), output_format), driver=driver_type)
+    
+
+def convert_files(input_dir, output_dir, input_format, output_format):
+    """
+    Convert a set of files to a different format.
+    """
+
+    files = []
+    for f in os.listdir(data_dir):
+        files.append(f)
+
+    for file in files:
+        if file.split('.')[-1] == '%s' % input_format:
+                         
+            _convert_file_format(input_dir=input_dir, output_dir=output_dir, file=file,  output_format=output_format)
+
+
+def extract_archive(input_list, output_dir, archive_format='gz', input_format='gml', convert_to=None, temp_dir='temp'):
+    """
+    Read in an archive and extract. Option to convert to a different file format.
+    """
+
+    if convert_to is not None:
+        temp_path = os.path.join(output_dir,temp_dir)
+
     for data_dir in input_list:
 
         files = []
@@ -14,16 +60,27 @@ def gml_to_shp(input_list, data_dir_output):
 
         for file in files:
 
-            if file.split('.')[-1] == 'gz':
+            if file.split('.')[-1] == '%s' % archive_format:
                 file_name = file.split('.')[0]
 
+                if convert_to is not None:
+                    save_to=temp_path
+                    if not os.path.exists(temp_path):
+                        os.mkdir(os.path.join(output_dir,temp_dir))
+                else:
+                    save_to=output_dir
+
                 with gzip.open('%s' % (os.path.join(data_dir, file)), 'rb') as f_in:
-                    with open('%s.gml' % (os.path.join(data_dir_output, 'gml', file_name)), 'wb') as f_out:
+                                            
+                    with open('%s.%s' % (os.path.join(save_to, file_name), input_format), 'wb') as f_out:
                         shutil.copyfileobj(f_in, f_out)
 
-                gdf = gpd.read_file('%s.gml' % (os.path.join(data_dir_output, 'gml', file_name)))
+                if convert_to is not None:
+                    _convert_file_format(input_dir=temp_path, output_dir=output_dir, file=file.replace('.%s' % archive_format,''), output_format=convert_to)
 
-                gdf.to_file('%s.shp' % (os.path.join(data_dir_output, 'shp', file_name)))
+    # at end, delete temp directory
+    if convert_to is not None:
+        shutil.rmtree(temp_path)
 
 
 def write_to_database(merge, data_dir, database, schema_name, table_name, username, password, host, port, format='gml'):

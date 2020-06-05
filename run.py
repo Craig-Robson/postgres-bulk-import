@@ -27,4 +27,5 @@ def to_database():
     data_dir = ''
     merge = True
 
-    functions.write_to_database(merge, data_dir, database, schema_name, table_name, , username, password, host, port, format)
+    functions.write_to_database(merge, data_dir, database, schema_name, table_name, username, password, host, port, format)
+

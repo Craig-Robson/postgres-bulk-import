@@ -29,7 +29,7 @@ def gml_to_shp(input_list, data_dir_output):
 def write_to_database(merge, data_dir, database, schema_name, table_name, username, password, host, port, format='gml'):
     """
     """
-    engine = create_engine("postgresql+psycopg2://%s:%s@%s:%s/%s" % (username, password, host, port, database)
+    engine = create_engine("postgresql+psycopg2://%s:%s@%s:%s/%s" % (username, password, host, port, database))
 
     files = []
     for f in os.listdir(data_dir):
@@ -60,10 +60,11 @@ def write_to_database(merge, data_dir, database, schema_name, table_name, userna
                 geom_type = str(gdf.geom_type[0])
 
             print(file_name, ':', geom_type)
+            geom_type = 'LineStringZ'
 
             if merge is False:
-                gdf.postgis.to_postgis(con=engine, table_name=file_name.lower(), schema='nov2019', geometry=geom_type)
+                gdf.postgis.to_postgis(con=engine, table_name=file_name.lower(), schema=schema_name, geometry=geom_type)
 
     if merge is True:
-        gdf.postgis.to_postgis(con=engine, table_name='%s' % table_name, schema='%s' % schema_name, geometry=geom_type)
+        gdf.postgis.to_postgis(con=engine, table_name=table_name, schema=schema_name, geometry=geom_type)
 

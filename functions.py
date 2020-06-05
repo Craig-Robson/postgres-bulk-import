@@ -33,17 +33,14 @@ def write_to_database(merge, data_dir, database, schema_name, table_name, userna
 
     files = []
     for f in os.listdir(data_dir):
-        # if file
         files.append(f)
 
     first = True
     for file in files:
 
         file_name = file.split('.')[0]
-        file_no = file_name.split('_')[-1]
 
         if file.split('.')[-1] == format:
-            # if file_name == 'Highways_Roads_RoadLink_FULL_%s' %(fileo):
 
             if merge is True and first is False:
                 gdf_ = gpd.read_file('%s' % (os.path.join(data_dir, file)))
@@ -52,19 +49,22 @@ def write_to_database(merge, data_dir, database, schema_name, table_name, userna
                 first = False
                 gdf = gpd.read_file('%s' % (os.path.join(data_dir, file)))
 
-            gdf.crs = "EPSG:27700"
+            if gdf.crs == '':
+                gdf.crs = "EPSG:27700"
 
             if gdf.geom_type[0] is None:
                 geom_type = 'LineStringZ'
             else:
                 geom_type = str(gdf.geom_type[0])
-
-            print(file_name, ':', geom_type)
-            geom_type = 'LineStringZ'
-
+                if geom_type == 'LineString':
+                    geom_type = 'LineStringZ'
+            
             if merge is False:
                 gdf.postgis.to_postgis(con=engine, table_name=file_name.lower(), schema=schema_name, geometry=geom_type)
 
+        print('Written %s to database' % file_name )
+
     if merge is True:
+        print('Writing data to database')
         gdf.postgis.to_postgis(con=engine, table_name=table_name, schema=schema_name, geometry=geom_type)
 
